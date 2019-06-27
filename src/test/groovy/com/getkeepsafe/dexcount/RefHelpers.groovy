@@ -19,8 +19,10 @@ package com.getkeepsafe.dexcount
 import com.android.dexdeps.FieldRef
 import com.android.dexdeps.MethodRef
 
-class RefHelpers {
-
+final class RefHelpers {
+    private RefHelpers() {
+        throw new AssertionError('No instances')
+    }
 
     static MethodRef methodRef(String className, String methodName = null) {
         if (methodName == null) {
@@ -36,10 +38,10 @@ class RefHelpers {
         return new FieldRef(className, "Object", fieldName)
     }
 
-    private static String randomName() {
+    static String randomName() {
         def rand = new Random()
         def alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890"
-        def len = rand.nextInt(16)
+        def len = 16
         def sb = new StringBuilder(len)
         for (int i = 0; i < len; ++i) {
             sb.append(alphabet.charAt(rand.nextInt(alphabet.length())))

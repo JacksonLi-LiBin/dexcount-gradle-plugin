@@ -1,29 +1,19 @@
 language: android
 
-android:
-  components:
-    - platform-tools
-    - tools
-    - build-tools-23.0.3
-    - android-23
-    - extra-google-m2repository
-    - extra-android-m2repository
-    - extra-android-support
+jdk: oraclejdk8
 
-groovy:
-  - 2.3.6
-  - 2.3.9
+before_install:
+  # Download SDK
+  - echo yes | sdkmanager "tools" &>/dev/null
+  - echo yes | sdkmanager "platform-tools" &>/dev/null
+  - echo yes | sdkmanager "platforms;android-28" &>/dev/null
+  # Update remaining dependencies and accept licenses
+  - echo yes | sdkmanager --update &>/dev/null
+  - echo yes | sdkmanager --licenses &>/dev/null
 
-jdk:
-  - oraclejdk8
+script: ./.buildscript/test.sh
 
-install: true
-
-script:
-  - ./.buildscript/test.sh
-
-after_success:
-  - ./.buildscript/deploy_snapshot.sh
+after_success: ./.buildscript/deploy_snapshot.sh
 
 env:
   global:
@@ -33,10 +23,10 @@ env:
 sudo: false
 
 before_cache:
-  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
-
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-    - $HOME/.gradle
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/.android/build-cache

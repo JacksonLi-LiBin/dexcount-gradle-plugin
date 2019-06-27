@@ -14,69 +14,96 @@
  * limitations under the License.
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'com.github.ben-manes.versions'
+buildscript {
+    apply from: "gradle/dependencies.gradle"
 
-sourceCompatibility = JavaVersion.VERSION_1_7
+    repositories {
+        gradlePluginPortal()
+        google()
+    }
+
+    dependencies {
+        classpath deps.gradleVersionsPlugin
+        classpath deps.kotlinGradlePlugin
+    }
+}
+
+plugins {
+    id "com.gradle.plugin-publish" version "0.10.0"
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        google()
+    }
+}
+
+apply plugin: "com.github.ben-manes.versions"
+apply plugin: "org.jetbrains.kotlin.jvm"
+apply plugin: "groovy"
+apply plugin: "java-gradle-plugin"
+
+sourceCompatibility = rootProject.ext.javaVersion
 
 group = GROUP
 version = VERSION_NAME
 
-buildscript {
-    repositories {
-        maven { url "https://plugins.gradle.org/m2/" } // Mirrors jcenter() and mavenCentral()
-    }
-
-    dependencies {
-        // Check for plugin updates
-        classpath "com.github.ben-manes:gradle-versions-plugin:0.12.0"
-    }
-}
-
-repositories {
-    maven { url "https://plugins.gradle.org/m2/" } // Mirrors jcenter() and mavenCentral()
-}
-
 jar {
     manifest {
         attributes(
-                'Implementation-Title': POM_ARTIFACT_ID,
-                'Implementation-Version': VERSION_NAME)
+                "Implementation-Title": POM_ARTIFACT_ID,
+                "Implementation-Version": VERSION_NAME)
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        eachDependency { details ->
+            if (details.requested.group == "org.jetbrains.kotlin") {
+                details.useVersion rootProject.ext.kotlinVersion
+            }
+        }
+    }
+}
+
+task createClasspathManifest() {
+    def outputDir = file("$buildDir/$name")
+
+    inputs.files sourceSets.main.runtimeClasspath
+    outputs.dir outputDir
+
+    doLast {
+        outputDir.mkdirs()
+        // Combine both main and test plugin classpaths
+        file("$outputDir/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join('\n') + '\n' + sourceSets.test.runtimeClasspath.join('\n')
     }
 }
 
 dependencies {
-    compile gradleApi()
-    compile 'com.android.tools.build:gradle:2.2.3'
-    compile 'com.google.code.gson:gson:2.6.2'
+    implementation deps.kotlinStdlib
+    implementation deps.gson
 
-    testCompile 'junit:junit:4.12'
-    testCompile('org.spockframework:spock-core:1.0-groovy-2.4') {
-        exclude module: 'groovy-all'
+    compileOnly deps.gradle
+
+    testRuntimeOnly files(createClasspathManifest)
+
+    testImplementation localGroovy()
+    testImplementation deps.gradle
+    testImplementation deps.junit
+    testImplementation deps.spockCore, { exclude module: "groovy-all" } // Use localGroovy()
+}
+
+apply from: "gradle/gradle-mvn-push.gradle"
+apply from: "gradle/compile.gradle"
+apply from: "gradle/gradle-plugin-portal.gradle"
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+    kotlinOptions {
+        // Disabling until there's some workaround for the warning
+        // about AGP's builder.jar containing its own bundled Kotlin
+        // runtime library.
+        allWarningsAsErrors = false
     }
 }
-
-task groovydocJar(type: Jar, dependsOn: groovydoc) {
-    classifier = 'groovydoc'
-    from 'build/docs/groovydoc'
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from 'build/docs/javadoc'
-}
-
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-    classifier = 'sources'
-}
-
-artifacts {
-    archives jar
-    archives groovydocJar
-    archives javadocJar
-    archives sourcesJar
-}
-
-apply from: file('gradle/gradle-mvn-push.gradle')

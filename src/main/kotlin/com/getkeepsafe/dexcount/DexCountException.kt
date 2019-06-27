@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2016 KeepSafe Software
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.dexdeps;
+package com.getkeepsafe.dexcount
 
-/**
- * Bad data found inside a DEX file.
- */
-@SuppressWarnings("serial")
-public class DexDataException extends RuntimeException {
+class DexCountException : RuntimeException {
+    constructor()
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable) : super(message, cause)
 }

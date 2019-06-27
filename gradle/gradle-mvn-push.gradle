@@ -80,7 +80,29 @@ afterEvaluate { project ->
     }
 
     signing {
-        required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+        required { isReleaseBuild() && (gradle.taskGraph.hasTask("uploadArchives") || gradle.taskGraph.hasTask("publishPlugins")) }
         sign configurations.archives
+    }
+
+    task groovydocJar(type: Jar, dependsOn: groovydoc) {
+        classifier = 'groovydoc'
+        from 'build/docs/groovydoc'
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from 'build/docs/javadoc'
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+    }
+
+    artifacts {
+        archives jar
+        archives groovydocJar
+        archives javadocJar
+        archives sourcesJar
     }
 }

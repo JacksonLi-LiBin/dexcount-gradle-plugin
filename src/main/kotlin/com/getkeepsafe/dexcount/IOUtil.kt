@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2016 KeepSafe Software
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.dexdeps;
+package com.getkeepsafe.dexcount
 
-/**
- * Bad data found inside a DEX file.
- */
-@SuppressWarnings("serial")
-public class DexDataException extends RuntimeException {
+import java.io.File
+import java.io.InputStream
+import java.io.PrintStream
+
+fun File.writeFromStream(stream: InputStream) {
+    this.outputStream().use { output ->
+        stream.copyTo(output)
+    }
+}
+
+fun InputStream.copyToFile(file: File) {
+    file.outputStream().use {
+        copyTo(it)
+        it.flush()
+    }
+}
+
+fun File.printStream(): PrintStream {
+    parentFile.mkdirs()
+    createNewFile()
+    return PrintStream(outputStream())
 }
